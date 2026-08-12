@@ -1,0 +1,20 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "ryu.tuition",
+  "version": "1.0.0",
+  "description": "A tutor for one learner — you. Turn your own syllabus and notes into a mastery model, drill the weakest thing you are ready for, and get graded by arithmetic wherever arithmetic can decide it.",
+  "keywords": [
+    "tuition",
+    "study",
+    "revision",
+    "spaced-repetition",
+    "mastery",
+    "exam"
+  ],
+  "extensions": {
+    "com.ryuhq.ryu": {
+      "id": "@ryu/tuition",
+      "displayName": "Tuition"
+    }
+  }
+}
