@@ -1,0 +1,81 @@
+[package]
+name = "ryu-tuition"
+# The version the publish train is on. `tools/publish-crates.sh` reads TRAIN_VERSION
+# from the FIRST crate in its list and requires every crate in the set to be on it,
+# so an apps-store backend that drifts to its own version silently breaks the
+# release. Every other `apps-store/*/backend` is on 0.1.9; so is this one.
+version = "0.1.12"
+edition = "2021"
+license = "Apache-2.0"
+description = "Tuition for Ryu: a single-learner tutor that owns its whole spine out-of-process — subjects and parsed source documents, a prerequisite DAG of skills each carrying a Bayesian Knowledge Tracing posterior, SM-2 review scheduling over skills, a session planner that fills a time budget by expected mastery gain, exam-date trajectory projection, and grading that is pure arithmetic for every objective item kind — as a SQLite-backed sidecar Core spawns and proxies to on loopback. ZERO dependency on apps/core."
+repository = "https://github.com/amajorai/ryu"
+
+# Sidecar-ONLY: this crate is a process, not a library Core links. The shape is
+# `ryu-social`'s / `ryu-mail`'s: one `[[bin]]`, and no `lib.rs` for Core to link.
+# Core reaches this app exclusively through the generic ext-proxy
+# (`/api/ext/@ryu/tuition/*` + the `public_mount` at `/api/tuition`), so there is
+# nothing for Core to link and no `apps/core` dep in either direction.
+#
+# The `[lib]` below exists ONLY so the deterministic spine (BKT, SM-2, the
+# prerequisite DAG, the planner, the graders) is unit-testable and so the `mcp`
+# subcommand and the HTTP layer share one implementation — it is NOT a Core-facing
+# surface and nothing outside this crate depends on it. `ryu-reasoning` has the
+# same lib-plus-bin shape for the same reason.
+[[bin]]
+name = "ryu-tuition"
+path = "src/main.rs"
+
+[lib]
+name = "ryu_tuition"
+path = "src/lib.rs"
+
+# Versions are matched to apps/core/Cargo.toml (and to the sibling apps-store
+# backends) so this crate joining the root workspace via the `apps-store/*/backend`
+# member glob introduces NO version skew for any other job building the tree.
+#
+# NOTHING here is new to the root Cargo.lock. That is a deliberate constraint, not a
+# coincidence: several jobs share this working tree and this lockfile. The one thing
+# it costs is that the fixed-point decimal used to grade numeric answers is written
+# by hand in `grade.rs` rather than pulled from `rust_decimal` — which is the right
+# trade anyway, since `f64::from_str` must never be what decides whether an answer
+# was correct.
+[dependencies]
+# `full` is required, not optional: the bin needs the multi-thread runtime + macros
+# + net for `#[tokio::main]` / `TcpListener` / `axum::serve`, and the daily due-roll
+# tick needs `tokio::time` + `tokio::spawn`.
+tokio = { version = "1", features = ["full"] }
+axum = "0.7"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+# Every stored instant is an INTEGER epoch-millis column; chrono is used to turn
+# those into the day boundaries SM-2 needs.
+chrono = { version = "0.4", features = ["serde"] }
+# Review intervals are whole days from a day boundary in the LEARNER's timezone, so
+# a card due "tomorrow" does not shift because a session ran at 23:58. A fixed UTC
+# offset gets that wrong for half the year in most of the world, so this needs real
+# IANA zone resolution. Same 0.10 line apps/core already pins.
+chrono-tz = "0.10"
+uuid = { version = "1", features = ["v4", "serde"] }
+rusqlite = { version = "0.40.0", features = ["bundled"] }
+# Used for exactly two things, both of them the model edges this app is careful to
+# keep narrow: the `hook:side-model` callback into Core (skill extraction from a
+# parsed document, item generation, rubric grading) and the `document.parse`
+# capability call. The deterministic spine never makes a network call.
+reqwest = { version = "0.12", features = ["json"] }
+tracing = "0.1"
+# Sidecar-binary-only deps (data-dir resolution + logging), mirroring `ryu-social`.
+dirs = "5"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+# The app-event emit client: raises the `contributes.hook_events` this app declares
+# in its manifest (`review.due` / `mastery.dropped` / `goal.at-risk`) so plugin hooks
+# and event-triggered workflows can react without this crate knowing they exist. It
+# is a standalone crate holding only the OUTBOUND half of the emit call, so it links
+# none of Core and does not violate the zero-Core rule. Emitting is best-effort and
+# no-ops when the process is not Core-hosted, so it stays safe under this crate's
+# own tests and any standalone run.
+#
+# The `version` alongside the `path` is mandatory, not decorative: the published
+# satellite tree has no sibling `crates/`, and the version is what lets it resolve
+# this dep from the registry instead.
+ryu-app-events = { path = "../crates/core/app-events", version = "0.1.12" }
