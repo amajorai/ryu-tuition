@@ -1,0 +1,27 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "ryu.tuition",
+  "version": "0.1.14",
+  "description": "A tutor for one learner — you. Point it at your own syllabus, chapter or notes and it builds a mastery model you can read: every skill carries a Bayesian Knowledge Tracing posterior, its prerequisite edges, and a spaced-repetition schedule computed in whole days so a review due tomorrow does not move because you studied at 23:58. \"What should I study next\" is a topological answer — the weakest skill whose prerequisites you have already mastered — not a guess, and \"0.62 mastery, three more correct at this difficulty reaches 0.9\" is a projection you can check by hand. Multiple-choice, cloze, numeric-with-tolerance and exact answers are graded by comparison with no model in the loop at all; only free-response answers are marked by a model, and those always show the rubric they were graded against. Given an exam date it projects, from your observed rate over the last ten sessions, whether the syllabus will be covered in time, and says `unknown` rather than extrapolating off two data points. A model is used at exactly two edges — proposing skills from a document, and writing practice items and rubric marks — and both are reviewed by a person before they count.",
+  "keywords": [
+    "study",
+    "revision",
+    "spaced-repetition",
+    "mastery",
+    "flashcards",
+    "exam",
+    "tutor",
+    "learning"
+  ],
+  "extensions": {
+    "com.ryuhq.ryu": {
+      "id": "@ryu/tuition",
+      "displayName": "Tuition",
+      "mcp": {
+        "tuition": {
+          "description": "Your own mastery model as tools, so any agent or workflow can tutor you and record what happened: `due` lists the skills whose review is owed and why, `quiz` hands back stored practice items for a skill, `grade` marks an answer (by comparison for objective kinds, against the written rubric for free response), `log` records an attempt so the posterior and the schedule actually move, and `mastery` reports the current posterior per skill with the projection of how many more correct answers reach the target. `due`, `quiz` and `mastery` are pure reads of computed state — a workflow branching on them takes the same path for the same data."
+        }
+      }
+    }
+  }
+}
